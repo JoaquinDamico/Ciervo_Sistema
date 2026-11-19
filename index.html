@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Ciervo — Sistema de Ventas e Inventario</title>
+  <link rel="shortcut icon" href="Icono_Ciervo.jpeg" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand-box">
+      <div class="brand-title">EL CIERVO</div>
+      <div class="brand-subtitle">VINOTECA &amp; PUNTO DE VENTA</div>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()">Modo Claro</button>
+  </header>
+
+  <nav class="tabs-nav">
+    <button type="button" class="tab-btn active" onclick="switchTab('pos-section', this)">Ventas (POS)</button>
+    <button type="button" class="tab-btn" onclick="switchTab('inventory-section', this)">Inventario</button>
+    <button type="button" class="tab-btn" onclick="switchTab('sales-section', this)">Historial y Caja</button>
+    <button type="button" class="tab-btn" onclick="switchTab('notes-section', this)">Notas / To-Do</button>
+  </nav>
+
+  <main class="main-container">
+    <!-- SECCIÓN VENTAS (POS) -->
+    <section id="pos-section" class="tab-content active">
+      <div class="pos-layout">
+        <div class="pos-catalog">
+          <div class="filters-bar">
+            <input type="text" id="pos-search" placeholder="Buscar producto por nombre..." oninput="renderPosProducts()">
+            <select id="pos-category-filter" onchange="renderPosProducts()"></select>
+          </div>
+          <div id="pos-products-grid" class="products-grid"></div>
+        </div>
+
+        <aside class="pos-cart">
+          <h2>Ticket Actual</h2>
+          <div id="cart-items" class="cart-items"></div>
+
+          <div class="cart-summary">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span id="cart-subtotal">$0</span>
+            </div>
+
+            <div class="discount-box">
+              <div class="calc-field">
+                <label for="discount-percent">Descuento (%):</label>
+                <input type="number" id="discount-percent" min="0" max="100" step="0.1" placeholder="0" oninput="onDiscountInput()">
+              </div>
+              <div class="calc-quick-buttons">
+                <button type="button" onclick="setDiscount(0)">0%</button>
+                <button type="button" onclick="setDiscount(10)">10%</button>
+                <button type="button" onclick="setDiscount(15)">15%</button>
+                <button type="button" onclick="setDiscount(20)">20%</button>
+                <button type="button" onclick="setDiscount(25)">25%</button>
+                <button type="button" onclick="setDiscount(30)">30%</button>
+              </div>
+              <div class="summary-row discount-row">
+                <span>Monto descontado:</span>
+                <span id="discount-amount">$0</span>
+              </div>
+            </div>
+
+            <div class="summary-row total-row">
+              <label for="final-charge-amount">A COBRAR ($):</label>
+              <input type="number" id="final-charge-amount" class="final-charge-input" min="0" step="1" placeholder="0" oninput="onFinalChargeInput()">
+            </div>
+
+            <div class="calculator-box">
+              <h3>Calculadora de Vuelto</h3>
+              <div class="calc-field">
+                <label for="payment-amount">Paga con ($):</label>
+                <input type="number" id="payment-amount" placeholder="0" oninput="calculateChange()">
+              </div>
+              <div class="calc-quick-buttons">
+                <button type="button" onclick="setPayment(1000)">$1.000</button>
+                <button type="button" onclick="setPayment(2000)">$2.000</button>
+                <button type="button" onclick="setPayment(5000)">$5.000</button>
+                <button type="button" onclick="setPayment(10000)">$10.000</button>
+                <button type="button" onclick="setPayment(20000)">$20.000</button>
+                <button type="button" onclick="setExactPayment()">Exacto</button>
+              </div>
+              <div class="summary-row change-row">
+                <span>Vuelto:</span>
+                <span id="change-due" class="change-amount">$0</span>
+              </div>
+            </div>
+
+            <div class="payment-method-box">
+              <label for="payment-method">Medio de Pago:</label>
+              <select id="payment-method">
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="TARJETA">Tarjeta Débito/Crédito</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-primary btn-block" onclick="processSale()">Cobrar y Registrar</button>
+            <button type="button" class="btn btn-danger btn-block" onclick="clearCart()">Vaciar Carrito</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- SECCIÓN INVENTARIO -->
+    <section id="inventory-section" class="tab-content">
+      <div class="section-header">
+        <h2>Inventario de Productos</h2>
+        <button type="button" class="btn btn-primary" onclick="openProductModal()">+ Nuevo Producto</button>
+      </div>
+
+      <div class="filters-bar">
+        <input type="text" id="inv-search" placeholder="Buscar en inventario..." oninput="renderInventory()">
+        <select id="inv-category-filter" onchange="renderInventory()"></select>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Producto</th>
+              <th>Sección</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECCIÓN HISTORIAL Y CAJA -->
+    <section id="sales-section" class="tab-content">
+      <div class="section-header">
+        <h2>Historial de Ventas y Caja</h2>
+      </div>
+
+      <div class="filters-bar sales-date-filters">
+        <div class="filter-group">
+          <label for="filter-year">Año:</label>
+          <select id="filter-year" onchange="applySalesFilters()">
+            <option value="ALL">Todos</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-month">Mes:</label>
+          <select id="filter-month" onchange="applySalesFilters()">
+            <option value="ALL">Todos</option>
+            <option value="0">Enero</option>
+            <option value="1">Febrero</option>
+            <option value="2">Marzo</option>
+            <option value="3">Abril</option>
+            <option value="4">Mayo</option>
+            <option value="5">Junio</option>
+            <option value="6">Julio</option>
+            <option value="7">Agosto</option>
+            <option value="8">Septiembre</option>
+            <option value="9">Octubre</option>
+            <option value="10">Noviembre</option>
+            <option value="11">Diciembre</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-day">Día:</label>
+          <select id="filter-day" onchange="applySalesFilters()">
+            <option value="ALL">Todos</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetSalesFilters()">Limpiar Filtros</button>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Recaudado</div>
+          <div class="metric-value" id="metric-total-revenue">$0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Ventas Registradas</div>
+          <div class="metric-value" id="metric-total-count">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Unidades Vendidas</div>
+          <div class="metric-value" id="metric-total-units">0</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Distribución por Medio de Pago</h3>
+        <div id="sales-chart" class="sales-chart"></div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha y Hora</th>
+              <th>Detalle</th>
+              <th>Medio de Pago</th>
+              <th>Total Cobrado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="sales-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECCIÓN NOTAS / TO-DO -->
+    <section id="notes-section" class="tab-content">
+      <div class="notes-header-card">
+        <div class="notes-title-row">
+          <div>
+            <h2>Notas y Pendientes</h2>
+            <p class="notes-subtitle">Anotá pendientes marcables, faltantes de mercadería o comentarios rápidos del local.</p>
+          </div>
+          <div class="notes-customizer">
+            <label for="accent-color-picker">Acento:</label>
+            <input type="color" id="accent-color-picker" value="#D4A017" title="Color de acento" oninput="setAccentColor(this.value)">
+            <label class="compact-toggle">
+              <input type="checkbox" id="compact-notes-toggle" onchange="toggleCompactNotes(this.checked)">
+              <span>Compacto</span>
+            </label>
+          </div>
+        </div>
+
+        <form class="notes-form" onsubmit="addTodoNote(event)">
+          <input type="text" id="note-text-input" placeholder="Escribí un pendiente o un comentario/nota libre..." required>
+          <select id="note-tag-select">
+            <option value="NOTA">Nota / Comentario</option>
+            <option value="REPONER">Reponer</option>
+            <option value="PEDIDO">Pedido</option>
+            <option value="TAREA">Tarea</option>
+            <option value="URGENTE">Urgente</option>
+          </select>
+          <button type="submit" class="btn btn-primary">Agregar</button>
+        </form>
+
+        <div class="notes-toolbar">
+          <div class="notes-filters">
+            <button type="button" class="filter-chip active" data-filter="ALL" onclick="setNotesFilter('ALL', this)">Todas</button>
+            <button type="button" class="filter-chip" data-filter="PENDING" onclick="setNotesFilter('PENDING', this)">To-Do Pendientes</button>
+            <button type="button" class="filter-chip" data-filter="COMMENTS" onclick="setNotesFilter('COMMENTS', this)">Comentarios</button>
+            <button type="button" class="filter-chip" data-filter="DONE" onclick="setNotesFilter('DONE', this)">Completadas</button>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearCompletedNotes()">Limpiar completadas</button>
+        </div>
+      </div>
+
+      <div id="notes-list" class="notes-list"></div>
+    </section>
+  </main>
+
+  <!-- MODAL NUEVO / EDITAR PRODUCTO -->
+  <div id="product-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title">Agregar Producto</h3>
+        <button type="button" class="close-modal-btn" onclick="closeProductModal()">&times;</button>
+      </div>
+      <form id="product-form" onsubmit="saveProduct(event)">
+        <input type="hidden" id="prod-id">
+        <div class="form-group">
+          <label for="prod-name">Nombre del Producto</label>
+          <input type="text" id="prod-name" required>
+        </div>
+        <div class="form-group">
+          <label for="prod-category">Sección / Subdivisión</label>
+          <select id="prod-category" required></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="prod-price">Precio ($)</label>
+            <input type="number" id="prod-price" min="0" step="1" required>
+          </div>
+          <div class="form-group">
+            <label for="prod-stock">Stock (unidades)</label>
+            <input type="number" id="prod-stock" min="0" step="1" required>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
